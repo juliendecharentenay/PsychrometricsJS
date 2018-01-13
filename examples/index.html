@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="./lib/bootstrap.css">
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="./lib/jquery-3.2.1.js"></script>
+    <!-- <script src="./lib/popper.min.js"></script> -->
+    <script src="./lib/bootstrap.js"></script>
+
+    <title>PsychrometricsJS, Examples</title>
+  </head>
+  <body>
+    <nav class="navbar navbar-default">
+      <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">RED</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+          <ul class="nav navbar-nav">
+            <li class="active"><a href="#home">Home <span class="sr-only">(current)</span></a></li>
+            <li><a href="#StandardConditions">Standard Conditions</a></li>
+            <li><a href="#Temperature">Temperature Convertion</a></li>
+            <li><a href="#WaterVaporSatPressure">Water Vapor Saturation Pressure</a></li>
+          </ul>
+        </div><!-- /.navbar-collapse -->
+      </div><!-- /.container-fluid -->
+    </nav>
+
+    <div class="container theme-showcase" role="main">
+      <div class="page-header">
+        <a name="home"></a>
+        <h1>Home</h1>
+      </div>
+      <p>PsychrometricsJS is a javascript library for psychrometric calculation. The psychrometrics calculation is based on ASHRAE Handbook Fundamentals 2013.</p>
+     <blockquote>
+       <p id="notice"></p>
+     </blockquote>
+<script>
+$(window).on('load', 
+  function() {
+    $("#notice").append("Psychrometrics v"+PsychrometricsJS.major_version+"."+PsychrometricsJS.minor_version);
+    $("#notice").append("<br/>");
+    $("#notice").append(PsychrometricsJS.copyright);
+    $("#notice").append("<br/>");
+    // $("#notice").append("<a href="+PsychrometricsJS.website+">"+PsychrometricsJS.website+"</a>");
+    $("#notice").append("<a href=\""+PsychrometricsJS.website+"\">"+PsychrometricsJS.website+"</a>");
+    $("#notice").append("<br/>");
+    $("#notice").append(PsychrometricsJS.license);
+  });
+</script>
+
+      <div class="page-header">
+        <a name="StandardConditions"></a>
+        <h1>Standard conditions</h1>
+      </div>
+      <blockquote>
+        <div class="input-group">
+          <span class="input-group-addon">Altitude</span>
+          <input type="number" class="form-control" placeholder="0" id="altitude" value="0" />
+          <span class="input-group-addon">m</span>
+        </div>
+        <div class="input-group">
+          <span class="input-group-addon">Standard pressure</span>
+          <input type="number" class="form-control" placeholder="101325" id="standard-pressure" value="101325" disabled/>
+          <span class="input-group-addon">Pa</span>
+        </div>
+        <div class="input-group">
+          <span class="input-group-addon">Standard temperature</span>
+          <input type="number" class="form-control" placeholder="20" id="standard-temperature" value="20" disabled/>
+          <span class="input-group-addon">Pa</span>
+        </div>
+      </blockquote>
+
+<script>
+var updateStandardConditions = function(z) {
+  $('#standard-pressure').val(PsychrometricsJS.getStandardAtmPressure(z).to_pascal());
+  $('#standard-temperature').val(PsychrometricsJS.getStandardAtmTemperature(z).to_celsius());
+};
+
+$(window).on('load', 
+   function() {
+     $('#altitude').val(0);
+     updateStandardConditions(new PsychrometricsJS.Length(0.0, PsychrometricsJS.Units.METER));
+     $('#altitude').on('change keyup paste', function() { var v = $('#altitude').val(); if (v != "") {updateStandardConditions(new PsychrometricsJS.Length(parseFloat(v), PsychrometricsJS.Units.METER));}});
+});
+</script>
+
+      <div class="page-header">
+        <a name="temperature"></a>
+        <h1>Temperature conversion</h1>
+      </div>
+      <blockquote>
+        <div class="input-group">
+          <span class="input-group-addon">Temperature</span>
+          <input type="number" class="form-control" placeholder="20" id="temp-conv-celsius" value="20" />
+         <span class="input-group-addon">Celsius</span>
+        </div> <!-- input-group -->
+
+        <div class="input-group">
+          <span class="input-group-addon">Temperature</span>
+          <input type="number" class="form-control" placeholder="20" id="temp-conv-kelvin" value="20" />
+         <span class="input-group-addon">Kelvin</span>
+        </div> <!-- input-group -->
+
+        <div class="input-group">
+          <span class="input-group-addon">Temperature</span>
+          <input type="number" class="form-control" placeholder="20" id="temp-conv-fahrenheit" value="20" />
+         <span class="input-group-addon">Fahrenheit</span>
+        </div> <!-- input-group -->
+      </blockquote>
+
+<script>
+var updateTemperature = function(temperature) {
+  $('#temp-conv-celsius').val(temperature.to_celsius());
+  $('#temp-conv-kelvin').val(temperature.to_kelvin());
+  $('#temp-conv-fahrenheit').val(temperature.to_fahrenheit());
+};
+
+$(window).on('load', 
+   function() {
+     updateTemperature(new PsychrometricsJS.Temperature(20.0, PsychrometricsJS.Units.CELSIUS));
+     $('#temp-conv-celsius').on('change keyup paste', function() { var v = $('#temp-conv-celsius').val(); if (v != "") {updateTemperature(new PsychrometricsJS.Temperature(parseFloat(v), PsychrometricsJS.Units.CELSIUS));}});
+     $('#temp-conv-kelvin').on('change keyup paste', function() { var v = $('#temp-conv-kelvin').val(); if (v != "") {updateTemperature(new PsychrometricsJS.Temperature(parseFloat(v), PsychrometricsJS.Units.KELVIN));}});
+     $('#temp-conv-fahrenheit').on('change keyup paste', function() { var v = $('#temp-conv-fahrenheit').val(); if (v != "") {updateTemperature(new PsychrometricsJS.Temperature(parseFloat(v), PsychrometricsJS.Units.FAHRENHEIT));}});
+   });
+</script>
+
+      <div class="page-header">
+        <a name="temperature"></a>
+        <h1>Water Vapor Saturation Pressure</h1>
+      </div>
+      <blockquote>
+        <div class="input-group">
+          <span class="input-group-addon">Temperature</span>
+          <input type="number" class="form-control" placeholder="20" id="water-vap-satpressure-temperature" value="20" />
+         <span class="input-group-addon">Celsius</span>
+        </div> <!-- input-group -->
+
+        <div class="input-group">
+          <span class="input-group-addon">Saturation pressure</span>
+          <input type="number" class="form-control" placeholder="20" id="water-vap-satpressure-pressure" value="20" disabled />
+         <span class="input-group-addon">Pa</span>
+        </div> <!-- input-group -->
+      </blockquote>
+<script>
+var updateWaterVaporSaturationPressure = function(temperature) {
+  $('#water-vap-satpressure-pressure').val(PsychrometricsJS.Functions.getWaterVaporSaturationPressure(temperature));
+};
+
+$(window).on('load', 
+   function() {
+     $('#water-vap-satpressure-temperature').val(20);
+     updateWaterVaporSaturationPressure(new PsychrometricsJS.Temperature(20.0, PsychrometricsJS.Units.CELSIUS));
+     $('#water-vap-satpressure-temperature').on('change keyup paste', function() { var v = $('#water-vap-satpressure-temperature').val(); if (v != "") {updateWaterVaporSaturationPressure(new PsychrometricsJS.Temperature(parseFloat(v), PsychrometricsJS.Units.CELSIUS));}});
+   });
+</script>
+
+      <div class="page-header">
+        <h1>Psychrometrics State</h1>
+      </div>
+      <blockquote>
+        <div class="input-group">
+          <span class="input-group-addon">Select input</span>
+          <select id="psyst-select-input" class="form-control">
+            <option value="dbtwbt" selected>Dry-bulb/wet-bulb temperature</option>
+            <option value="dbtdpt">Dry-bulb/dew-point temperature</option>
+            <option value="dbtrh">Dry-bulb temperature/relative humidity</option>
+            <option value="dbthr">Dry-bulb temperature/Humidity ratio</option>
+            <option value="dbth">Dry-bulb temperature/Enthalpy</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <span class="input-group-addon">Pressure</span>
+          <input type="number" class="form-control" placeholder="101325" id="psyst-pressure" value="101325" />
+          <span class="input-group-addon">Pa</span>
+        </div>
+
+        <div class="input-group">
+          <span class="input-group-addon">Dry-bulb temperature</span>
+          <input type="number" class="form-control" placeholder="20" id="psyst-drybulbtemperature" value="20" />
+          <span class="input-group-addon">Celsius</span>
+        </div>
+
+        <div class="input-group">
+          <span class="input-group-addon">Wet-bulb temperature</span>
+          <input type="number" class="form-control" placeholder="20" id="psyst-wetbulbtemperature" value="20" />
+          <span class="input-group-addon">Celsius</span>
+        </div>
+
+        <div class="input-group">
+          <span class="input-group-addon">Dew-point temperature</span>
+          <input type="number" disabled class="form-control" placeholder="20" id="psyst-dewpointtemperature" value="20" />
+          <span class="input-group-addon">Celsius</span>
+        </div>
+
+        <div class="input-group">
+          <span class="input-group-addon">Relative humidity</span>
+          <input type="number" disabled class="form-control" placeholder="20" id="psyst-relativehumidity" value="20" />
+          <span class="input-group-addon">%</span>
+        </div>
+
+        <div class="input-group">
+          <span class="input-group-addon">Humidity ratio/moisture content</span>
+          <input type="number" disabled class="form-control" placeholder="20" id="psyst-humidityratio" value="20" />
+          <span class="input-group-addon">kg/kg-dry air</span>
+        </div>
+
+        <div class="input-group">
+          <span class="input-group-addon">Enthalpy</span>
+          <input type="number" disabled class="form-control" placeholder="20" id="psyst-enthalpy" value="20" />
+          <span class="input-group-addon">kJ/kg-dry air</span>
+        </div>
+
+      </blockquote>
+<script>
+var getPsychrometricsStateInputState = function() {
+  var hash = {};
+  hash[PsychrometricsJS.Variables.P] = new PsychrometricsJS.Pressure(parseFloat($('#psyst-pressure').val()), PsychrometricsJS.Units.PASCAL);
+  switch($('#psyst-select-input').val()) {
+    case 'dbtwbt':
+      hash[PsychrometricsJS.Variables.DBT] = new PsychrometricsJS.Temperature(parseFloat($('#psyst-drybulbtemperature').val()), PsychrometricsJS.Units.CELSIUS);
+      hash[PsychrometricsJS.Variables.WBT] = new PsychrometricsJS.Temperature(parseFloat($('#psyst-wetbulbtemperature').val()), PsychrometricsJS.Units.CELSIUS);
+      break;
+    case 'dbtdpt':
+    case 'dbtrh':
+    case 'dbthr':
+    case 'dbth':
+      throw "Input combination " + $('#psyst-select-input').val() + ' is not implemented yet...';
+      break;
+    default:
+      throw "Input combination " + $('#psyst-select-input').val() + ' is not supported';
+  };
+  return new PsychrometricsJS.State(hash)
+};
+
+var enablePsychrometricsState = function(option) {
+  var hash = {
+      '#psyst-drybulbtemperature': ! /^(dbtwbt|dbtdpt|dbtrh|dbthr|dbth)$/.test(option),
+      '#psyst-wetbulbtemperature': ! /^(dbtwbt)$/.test(option),
+      '#psyst-dewpointtemperature': ! /^(dbtdpt)$/.test(option),
+      '#psyst-relativehumidity': ! /^(dbtrh)$/.test(option),
+      '#psyst-humidityratio': ! /^(dbthr)$/.test(option),
+      '#psyst-enthalpy': ! /^(dbth)$/.test(option)
+    };
+  for (var k in hash) {
+    if (hash.hasOwnProperty(k)) {
+      $(k).prop('disabled', hash[k]);
+    }
+  }
+};
+
+var updatePsychrometricsState = function() {
+  var state = getPsychrometricsStateInputState();
+  if ($('#psyst-drybulbtemperature').prop('disabled')) { $('#psyst-drybulbtemperature').val(state.getDryBulbTemperature().to_celsius()); }
+  if ($('#psyst-wetbulbtemperature').prop('disabled')) { $('#psyst-wetbulbtemperature').val(state.getWetBulbTemperature().to_celsius()); }
+  if ($('#psyst-dewpointtemperature').prop('disabled')) { $('#psyst-dewpointtemperature').val(state.getDewPointTemperature().to_celsius()); }
+  if ($('#psyst-relativehumidity').prop('disabled')) { $('#psyst-relativehumidity').val(state.getRelativeHumidity()); }
+  if ($('#psyst-humidityratio').prop('disabled')) { $('#psyst-humidityratio').val(state.getHumidityRatio()); }
+  if ($('#psyst-enthalpy').prop('disabled')) { $('#psyst-enthalpy').val(state.getEnthalpy()); }
+};
+
+
+$(window).on('load',
+  function() {
+    try {
+      $('#psyst-select-input').val('dbtwbt');
+      enablePsychrometricsState('dbtwbt'); updatePsychrometricsState();
+      $('#psyst-select-input').on('change', function() { var v = $('#psyst-select-input').val(); if (v != "") {enablePsychrometricsState(v); updatePsychrometricsState();}});
+      $('#psyst-pressure').on('change keyup paste', function() { if ($('#psyst-pressure').val() != "") {updatePsychrometricsState(); }});
+      $('#psyst-drybulbtemperature').on('change keyup paste', function() { if ($('#psyst-drybulbtemperature').val() != "") {updatePsychrometricsState(); }});
+      $('#psyst-wetbulbtemperature').on('change keyup paste', function() { if ($('#psyst-wetbulbtemperature').val() != "") {updatePsychrometricsState(); }});
+      $('#psyst-dewpointtemperature').on('change keyup paste', function() { if ($('#psyst-dewpointtemperature').val() != "") {updatePsychrometricsState(); }});
+      $('#psyst-relativehumidity').on('change keyup paste', function() { if ($('#psyst-relativehumidity').val() != "") {updatePsychrometricsState(); }});
+      $('#psyst-humidityratio').on('change keyup paste', function() { if ($('#psyst-humidityratio').val() != "") {updatePsychrometricsState(); }});
+      $('#psyst-enthalpy').on('change keyup paste', function() { if ($('#psyst-enthalpy').val() != "") {updatePsychrometricsState(); }});
+    } catch (e) {
+      console.log(e);
+      alert(e.message);
+   }
+});
+</script>
+    </div> <!-- container -->
+
+    <script src="../src/psychrometricsJS.js"></script>
+     
+  </body>
+</html>
