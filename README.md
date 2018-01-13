@@ -1,7 +1,8 @@
-pyshcrometricJS
+pyschrometricJS
 =====
 
-A Psychrometric function library for Javascript.
+A Javascript library of psychrometric function and psychromtric state based on ASHRAE Handbook Fundamentals 2013.
+
 
 Usage
 =====
@@ -12,7 +13,9 @@ This example will generate:
 ```html
 ```
 
-Options
+License
 =======
+Copyright (C) 2018 Julien de Charentenay
+Licensed under MIT license
 
 
