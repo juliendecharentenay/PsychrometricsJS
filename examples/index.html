@@ -160,7 +160,7 @@ $(window).on('load',
       </blockquote>
 <script>
 var updateWaterVaporSaturationPressure = function(temperature) {
-  $('#water-vap-satpressure-pressure').val(PsychrometricsJS.Functions.getWaterVaporSaturationPressure(temperature));
+  $('#water-vap-satpressure-pressure').val(PsychrometricsJS.SI.getWaterVaporSaturationPressure(temperature));
 };
 
 $(window).on('load', 
@@ -239,6 +239,9 @@ var getPsychrometricsStateInputState = function() {
       hash[PsychrometricsJS.Variables.WBT] = new PsychrometricsJS.Temperature(parseFloat($('#psyst-wetbulbtemperature').val()), PsychrometricsJS.Units.CELSIUS);
       break;
     case 'dbtdpt':
+      hash[PsychrometricsJS.Variables.DBT] = new PsychrometricsJS.Temperature(parseFloat($('#psyst-drybulbtemperature').val()), PsychrometricsJS.Units.CELSIUS);
+      hash[PsychrometricsJS.Variables.DPT] = new PsychrometricsJS.Temperature(parseFloat($('#psyst-dewpointtemperature').val()), PsychrometricsJS.Units.CELSIUS);
+      break;
     case 'dbtrh':
     case 'dbthr':
     case 'dbth':
