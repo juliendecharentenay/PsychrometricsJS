@@ -183,6 +183,10 @@ $(window).on('load',
             <option value="dbtrh">Dry-bulb temperature/relative humidity</option>
             <option value="dbtw">Dry-bulb temperature/Humidity ratio</option>
             <option value="dbth">Dry-bulb temperature/Enthalpy</option>
+            <option value="wbtdpt">Wet-bulb/dew-point temperature</option>
+            <option value="wbtrh">Wet-bulb temperature/relative humidity</option>
+            <option value="wbtw">Wet-bulb temperature/Humidity ratio</option>
+            <!-- Ignore this option as wet-bulb and enthalpy are too aligned to solve meaningfully <option value="wbth">Wet-bulb temperature/Enthalpy</option> -->
           </select>
         </div>
 
@@ -254,6 +258,20 @@ var getPsychrometricsStateInputState = function() {
       hash[PsychrometricsJS.Variables.DBT] = new PsychrometricsJS.Temperature(parseFloat($('#psyst-drybulbtemperature').val()), PsychrometricsJS.Units.CELSIUS);
       hash[PsychrometricsJS.Variables.H] = parseFloat($('#psyst-enthalpy').val());
       break;
+    case 'wbtdpt':
+      hash[PsychrometricsJS.Variables.WBT] = new PsychrometricsJS.Temperature(parseFloat($('#psyst-wetbulbtemperature').val()), PsychrometricsJS.Units.CELSIUS);
+      hash[PsychrometricsJS.Variables.DPT] = new PsychrometricsJS.Temperature(parseFloat($('#psyst-dewpointtemperature').val()), PsychrometricsJS.Units.CELSIUS);
+      break;
+    case 'wbtrh':
+      hash[PsychrometricsJS.Variables.WBT] = new PsychrometricsJS.Temperature(parseFloat($('#psyst-wetbulbtemperature').val()), PsychrometricsJS.Units.CELSIUS);
+      hash[PsychrometricsJS.Variables.RH] = parseFloat($('#psyst-relativehumidity').val())/100.0;
+      break;
+    case 'wbtw':
+      hash[PsychrometricsJS.Variables.WBT] = new PsychrometricsJS.Temperature(parseFloat($('#psyst-wetbulbtemperature').val()), PsychrometricsJS.Units.CELSIUS);
+      hash[PsychrometricsJS.Variables.W] = parseFloat($('#psyst-humidityratio').val());
+      break;
+      // throw "Input combination " + $('#psyst-select-input').val() + ' is not implemented yet...';
+      // break;
     default:
       throw "Input combination " + $('#psyst-select-input').val() + ' is not supported';
   };
@@ -263,11 +281,11 @@ var getPsychrometricsStateInputState = function() {
 var enablePsychrometricsState = function(option) {
   var hash = {
       '#psyst-drybulbtemperature': ! /^(dbtwbt|dbtdpt|dbtrh|dbtw|dbth)$/.test(option),
-      '#psyst-wetbulbtemperature': ! /^(dbtwbt)$/.test(option),
-      '#psyst-dewpointtemperature': ! /^(dbtdpt)$/.test(option),
-      '#psyst-relativehumidity': ! /^(dbtrh)$/.test(option),
-      '#psyst-humidityratio': ! /^(dbtw)$/.test(option),
-      '#psyst-enthalpy': ! /^(dbth)$/.test(option)
+      '#psyst-wetbulbtemperature': ! /^(dbtwbt|wbtdpt|wbtrh|wbtw|wbth)$/.test(option),
+      '#psyst-dewpointtemperature': ! /^(dbtdpt|wbtdpt)$/.test(option),
+      '#psyst-relativehumidity': ! /^(dbtrh|wbtrh)$/.test(option),
+      '#psyst-humidityratio': ! /^(dbtw|wbtw)$/.test(option),
+      '#psyst-enthalpy': ! /^(dbth|wbth)$/.test(option)
     };
   for (var k in hash) {
     if (hash.hasOwnProperty(k)) {

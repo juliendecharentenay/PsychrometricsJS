@@ -301,6 +301,22 @@ PsychrometricsJS.solveBisection = function(vmin, vmax, target, err, func) {
   return v;
 };
 
+/**
+ * Numerical Solver: Using gradient method
+ */
+PsychrometricsJS.solveGradient = function(vmin, vmax, vInit, target, delta, err, func) {
+  var v = vInit; var f = func(v); var it=0; var f1 = null; var alpha=0.3;
+  while ((Math.abs(f-target)>err) && (it < 100)) {
+    f1 = func(v+delta);
+    if (Math.abs(f1-f)<1e-8) {throw "Gradient solver: Increase delta to get more meaningfull answer";}
+    v = v + alpha*(target-f)/(f1-f)*delta;
+    v = (v < vmin) ? vmin : ((v > vmax) ? vmax : v);
+    f = func(v);
+    ++it;
+  }
+  if (Math.abs(f-target)>err) {throw "Failed to converge gradient solver";}
+  return v;
+};
 
 /**
  * Standard conditions
@@ -357,6 +373,16 @@ PsychrometricsJS.State = function(hash) {
     } else if (hash.hasOwnProperty(PsychrometricsJS.Variables.W)) {
       this.from_dbtw(hash[PsychrometricsJS.Variables.DBT], hash[PsychrometricsJS.Variables.W], hash[PsychrometricsJS.Variables.P]);
     }
+  } else if (hash.hasOwnProperty(PsychrometricsJS.Variables.WBT)) {
+    if (hash.hasOwnProperty(PsychrometricsJS.Variables.DPT)) {
+      this.from_wbtdpt(hash[PsychrometricsJS.Variables.WBT], hash[PsychrometricsJS.Variables.DPT], hash[PsychrometricsJS.Variables.P]);
+
+    } else if (hash.hasOwnProperty(PsychrometricsJS.Variables.RH)) {
+      this.from_wbtrh(hash[PsychrometricsJS.Variables.WBT], hash[PsychrometricsJS.Variables.RH], hash[PsychrometricsJS.Variables.P]);
+
+    } else if (hash.hasOwnProperty(PsychrometricsJS.Variables.W)) {
+      this.from_wbtw(hash[PsychrometricsJS.Variables.WBT], hash[PsychrometricsJS.Variables.W], hash[PsychrometricsJS.Variables.P]);
+    }
   }
 
   // Check that core variables are specified
@@ -383,7 +409,7 @@ PsychrometricsJS.State.prototype.from_dbtdpt = function(dbt, dpt, p) {
 
 PsychrometricsJS.State.prototype.from_dbtrh = function(dbt, rh, p) {
   this.dbt = dbt; this.rh = rh; this.p = p;
-  var wbt = PsychrometricsJS.solveBisection(PsychrometricsJS.TMIN, this.dbt.to_celsius(), this.rh, 1e-4,
+  var wbt = PsychrometricsJS.solveBisection(PsychrometricsJS.TMIN, this.dbt.to_celsius(), this.rh, 1e-6,
                         function(wbt) {
                           return PsychrometricsJS.SI.getRelativeHumidityFromDbtWbt(this.dbt, wbt, this.p);
                         }.bind({'dbt': this.dbt.to_celsius(), 'p': this.p.to_pascal()}));
@@ -404,7 +430,51 @@ PsychrometricsJS.State.prototype.from_dbtw = function(dbt, w, p) {
   this.wbt = new PsychrometricsJS.Temperature(wbt, PsychrometricsJS.Units.CELSIUS);
 };
 
+PsychrometricsJS.State.prototype.from_wbtdpt = function(wbt, dpt, p) {
+  this.wbt = wbt; this.dpt = dpt; this.p = p;
+  var dbt = PsychrometricsJS.solveGradient(PsychrometricsJS.TMIN, PsychrometricsJS.TMAX, this.wbt.to_celsius(), this.dpt.to_celsius(), 0.1, 1e-4,
+                        function(dbt) {
+                          var w = PsychrometricsJS.SI.getHumidityRatioFromDbtWbt(dbt, this.wbt, this.p);
+                          return PsychrometricsJS.SI.getDewPointTemperature(w, this.p);
+                        }.bind({'wbt': this.wbt.to_celsius(), 'p': this.p.to_pascal()}));
+  this.dbt = new PsychrometricsJS.Temperature(dbt, PsychrometricsJS.Units.CELSIUS);
+};
 
+PsychrometricsJS.State.prototype.from_wbtrh = function(wbt, rh, p) {
+  this.wbt = wbt; this.rh = rh; this.p = p;
+  var dbt = PsychrometricsJS.solveGradient(PsychrometricsJS.TMIN, PsychrometricsJS.TMAX, this.wbt.to_celsius(), this.rh, 0.1, 1e-6,
+                        function(dbt) {
+                          return PsychrometricsJS.SI.getRelativeHumidityFromDbtWbt(dbt, this.wbt, this.p);
+                        }.bind({'wbt': this.wbt.to_celsius(), 'p': this.p.to_pascal()}));
+  this.dbt = new PsychrometricsJS.Temperature(dbt, PsychrometricsJS.Units.CELSIUS);
+};
+
+/**
+ * This could work, but enthalpy and wet-bulb line are too similar to be practical (or useful)
+ *
+PsychrometricsJS.State.prototype.from_wbth = function(wbt, h, p) {
+  this.wbt = wbt; this.h = h; this.p = p; 
+  var dbt = PsychrometricsJS.solveGradient(PsychrometricsJS.TMIN, PsychrometricsJS.TMAX, this.wbt.to_celsius(), this.h, 0.1, 1e-4,
+                        function(dbt) {
+                          var w = PsychrometricsJS.SI.getHumidityRatioFromDbtWbt(dbt, this.wbt, this.p);
+                          return PsychrometricsJS.SI.getEnthalpy(dbt, w);
+                        }.bind({'wbt': this.wbt.to_celsius(), 'p': this.p.to_pascal()}));
+  this.dbt = new PsychrometricsJS.Temperature(dbt, PsychrometricsJS.Units.CELSIUS);
+};
+*/
+
+PsychrometricsJS.State.prototype.from_wbtw = function(wbt, w, p) {
+  this.wbt = wbt; this.w = w; this.p = p;
+  var dbt = PsychrometricsJS.solveGradient(PsychrometricsJS.TMIN, PsychrometricsJS.TMAX, this.wbt.to_celsius(), this.w, 1.0, 1e-6,
+                        function(dbt) {
+                          return PsychrometricsJS.SI.getHumidityRatioFromDbtWbt(dbt, this.wbt, this.p);
+                        }.bind({'wbt': this.wbt.to_celsius(), 'p': this.p.to_pascal()}));
+  this.dbt = new PsychrometricsJS.Temperature(dbt, PsychrometricsJS.Units.CELSIUS);
+};
+
+/**
+ * Accessor functions
+ */
 PsychrometricsJS.State.prototype.getDewPointTemperature = function() {
   if (this.dpt == null) {
     var dpt = PsychrometricsJS.SI.getDewPointTemperature(this.getHumidityRatio(), this.p.to_pascal());
