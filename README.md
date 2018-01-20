@@ -1,4 +1,4 @@
-# pyschrometricJS
+# psychrometricJS
 
 A Javascript library of psychrometric function and psychromtric state based on ASHRAE Handbook Fundamentals 2013.
 
