@@ -18,6 +18,7 @@ PsychrometricsJS.website = "http://juliendecharentenay.wordpress.com";
 
 PsychrometricsJS.TMIN = -100.0;
 PsychrometricsJS.TMAX = 200.0;
+PsychrometricsJS.WMIN = 1e-5;
 
 PsychrometricsJS.Units = {};
 /**
@@ -105,6 +106,93 @@ PsychrometricsJS.Temperature.prototype.from_fahrenheit = function(value) { this.
 PsychrometricsJS.Temperature.prototype.to_fahrenheit = function(value) { return 9.0/5.0 * this.value + 32.0; };
 
 /**
+ * Humidity ratio
+ */
+PsychrometricsJS.Units.KGKGDA = "kg/kg dry-air";
+PsychrometricsJS.HumidityRatio = function(value, unit) {
+  if (window === this) { return new PsychrometricsJS.HumidityRatio(value, unit); }
+  this.value = null;
+  switch (unit) {
+    case PsychrometricsJS.Units.KGKGDA:
+      this.from_kgkgda(value);
+      break;
+    default:
+      throw "Humidity ratio unit " + unit + " is not supported";
+  }
+  return this;
+};
+
+PsychrometricsJS.HumidityRatio.prototype.from_kgkgda = function(value) { this.value = value; }
+PsychrometricsJS.HumidityRatio.prototype.to_kgkgda = function(value) { return this.value; }
+
+/**
+ * Relative humidity
+ */
+PsychrometricsJS.Units.ZEROTOONE = "Zero-to-one";
+PsychrometricsJS.Units.PERCENTAGE = "Percentage";
+PsychrometricsJS.RelativeHumidity = function(value, unit) {
+  if (window === this) { return new PsychrometricsJS.RelativeHumidity(value, unit); }
+  this.value = null;
+  switch (unit) {
+    case PsychrometricsJS.Units.ZEROTOONE:
+      this.from_zerotoone(value);
+      break;
+    case PsychrometricsJS.Units.PERCENTAGE:
+      this.from_percentage(value);
+      break;
+    default:
+      throw "Relative humidity unit " + unit + " is not supported";
+  }
+  return this;
+};
+
+PsychrometricsJS.RelativeHumidity.prototype.from_zerotoone = function(value) { this.value = value; }
+PsychrometricsJS.RelativeHumidity.prototype.to_zerotoone = function(value) { return this.value; }
+
+PsychrometricsJS.RelativeHumidity.prototype.from_percentage = function(value) { this.value = value/100.0; }
+PsychrometricsJS.RelativeHumidity.prototype.to_percentage = function(value) { return this.value * 100.0; }
+
+/**
+ * Enthalpy
+ */
+PsychrometricsJS.Units.KJKGDA = "kJ/kg dry-air";
+PsychrometricsJS.Enthalpy = function(value, unit) {
+  if (window === this) { return new PsychrometricsJS.Enthalpy(value, unit); }
+  this.value = null;
+  switch(unit) {
+    case PsychrometricsJS.Units.KJKGDA:
+      this.from_kjkgda(value);
+      break;
+    default:
+      throw "Enthalpy unit " + unit + " is not supported";
+  }
+  return this;
+};
+
+PsychrometricsJS.Enthalpy.prototype.from_kjkgda = function(value) { this.value = value; }
+PsychrometricsJS.Enthalpy.prototype.to_kjkgda = function(value) { return this.value; }
+
+/**
+ * Density
+ */
+PsychrometricsJS.Units.KGM3 = "kg/m3";
+PsychrometricsJS.Density = function(value, unit) {
+  if (window === this) { return new PsychrometricsJS.Density(value, unit); }
+  this.value = null;
+  switch (unit) {
+    case PsychrometricsJS.Units.KGM3:
+      this.from_kgm3(value);
+      break;
+    default:
+      throw "Density unit " + unit + " is not supported";
+  }
+  return this;
+};
+
+PsychrometricsJS.Density.prototype.from_kgm3 = function(value) { this.value = value; }
+PsychrometricsJS.Density.prototype.to_kgm3 = function(value) { return this.value; }
+
+/**
  * SI Functions
  */
 
@@ -186,7 +274,7 @@ PsychrometricsJS.SI.getHumidityRatioFromDbtWbt = function(dbt, wbt, p) {
   } else {
     w = ((2830.0 - 0.24*wbt)*ws_star - 1.006*(dbt-wbt))/(2830.0+1.86*dbt-2.1*wbt);
   }
-  return (w >= 1e-5) ? w : 1e-5;
+  return (w >= PsychrometricsJS.WMIN) ? w : PsychrometricsJS.WMIN;
 };
 
 /**
@@ -249,6 +337,21 @@ PsychrometricsJS.SI.getDewPointTemperature = function(w, p) {
 };
 
 /**
+ * Calculate humidity ratio from dew-point temperature ratio and pressure
+ * Uses the characteristic that at dew-point, the dew-point temperature is the 
+ * same as the wet-bulb and dry-bulb temperature.
+ *
+ * Input:
+ *  dpt: temperature (C)
+ *  p: pressure (Pa)
+ * return 
+ *  w: humidity ratio (kg/kgda)
+ */
+PsychrometricsJS.SI.getHumidityRatioFromDpt = function(dpt, p) {
+  return PsychrometricsJS.SI.getHumidityRatioFromDbtWbt(dpt, dpt, p);
+};
+
+/**
  * Calculate enthalpy from dry-bulb temperature and humidity ratio
  * Uses ASHRAE Handbook Fundamentals 2013 
  * Chapter 1 Psycrhometrics: Equations (32)
@@ -261,6 +364,21 @@ PsychrometricsJS.SI.getDewPointTemperature = function(w, p) {
  */
 PsychrometricsJS.SI.getEnthalpy = function(dbt, w) {
   return 1.006*dbt + w*(2501.0 + 1.86*dbt);
+};
+
+/**
+ * Calculate dry-bulb temperature from humidity ratio and enthalpy
+ * Uses ASHRAE Handbook Fundamentals 2013 
+ * Chapter 1 Psycrhometrics: Equations (32)
+ *
+ * Input:
+ *  h: enthalpy (kJ/kgda)
+ *  w: humidity ratio (kg/kgda)
+ * return 
+ *  dbt: dry-bulb temperature (C)
+ */
+PsychrometricsJS.SI.getDryBulbTemperatureFromHW = function(h, w) {
+  return (h - w*2501.0)/(1.006 + w*1.86);
 };
 
 /**
@@ -279,11 +397,65 @@ PsychrometricsJS.SI.getHumidityRatioFromDbtH = function(dbt, h) {
 };
 
 /**
+ * Calculate wet-bulb temperature from dry-bulb temperature, humidity ratio and pressure
+ * Uses numerical solver
+ *
+ * Input:
+ *  dbt: dry-bulb temperature (C)
+ *  w: humidity ratio (kg/kgda)
+ *  p: pressure (Pa)
+ * return 
+ *  wbt: wet-bulb temperature (C)
+ */
+PsychrometricsJS.SI.getWetBulbTemperatureFromDbtWP = function(dbt, w, p) {
+  return PsychrometricsJS.solveBisection(PsychrometricsJS.TMIN, dbt, w, 1e-8,
+                        function(wbt) {
+                          return PsychrometricsJS.SI.getHumidityRatioFromDbtWbt(this.dbt, wbt, this.p);
+                        }.bind({'dbt': dbt, 'p': p}));
+};
+
+/**
+ * Calculate dry-bulb temperature from wet-bulb temperature, relative humidity and pressure
+ * Uses numerical solver
+ *
+ * Input:
+ *  wbt: wet-bulb temperature (C)
+ *  rh: relative humidity (0-1)
+ *  p: pressure (Pa)
+ * return 
+ *  dbt: dry-bulb temperature (C)
+ */
+PsychrometricsJS.SI.getDryBulbTemperatureFromWbtRhP = function(wbt, rh, p) {
+  return PsychrometricsJS.solveGradient(PsychrometricsJS.TMIN, PsychrometricsJS.TMAX, wbt, rh, 0.1, 1e-8,
+                        function(dbt) {
+                          return PsychrometricsJS.SI.getRelativeHumidityFromDbtWbt(dbt, this.wbt, this.p);
+                        }.bind({'wbt': wbt, 'p': p}));
+};
+
+/**
+ * Calculate wet-bulb temperature from dry-bulb temperature, relative humidity and pressure
+ * Uses numerical solver
+ *
+ * Input:
+ *  dbt: dry-bulb temperature (C)
+ *  rh: relative humidity (0-1)
+ *  p: pressure (Pa)
+ * return 
+ *  wbt: wet-bulb temperature (C)
+ */
+PsychrometricsJS.SI.getWetBulbTemperatureFromDbtRhP = function(dbt, rh, p) {
+  return PsychrometricsJS.solveBisection(PsychrometricsJS.TMIN, dbt, rh, 1e-8,
+                        function(wbt) {
+                          return PsychrometricsJS.SI.getRelativeHumidityFromDbtWbt(this.dbt, wbt, this.p);
+                        }.bind({'dbt': dbt, 'p': p}));
+};
+
+/**
  * Numerical Solver: Using bisection method
  */
 PsychrometricsJS.solveBisection = function(vmin, vmax, target, err, func) {
   var fmin = func(vmin); var fmax = func(vmax);
-  if ((target - fmin)*(target-fmax) > 0) { throw "Bisection solver error: target value " + target + " is not within interval vmin|vmax. Function may not be monotonous"; }
+  if ((target - fmin)*(target-fmax) > 0) { throw "Bisection solver error: target value " + target + " is not within interval vmin|vmax [" + fmin + ";" + fmax + "]. Function may not be monotonous"; }
   if (Math.abs(fmin - target) <= err) { return vmin; }
   if (Math.abs(fmax - target) <= err) { return vmax; }
 
@@ -373,6 +545,7 @@ PsychrometricsJS.State = function(hash) {
     } else if (hash.hasOwnProperty(PsychrometricsJS.Variables.W)) {
       this.from_dbtw(hash[PsychrometricsJS.Variables.DBT], hash[PsychrometricsJS.Variables.W], hash[PsychrometricsJS.Variables.P]);
     }
+
   } else if (hash.hasOwnProperty(PsychrometricsJS.Variables.WBT)) {
     if (hash.hasOwnProperty(PsychrometricsJS.Variables.DPT)) {
       this.from_wbtdpt(hash[PsychrometricsJS.Variables.WBT], hash[PsychrometricsJS.Variables.DPT], hash[PsychrometricsJS.Variables.P]);
@@ -382,6 +555,27 @@ PsychrometricsJS.State = function(hash) {
 
     } else if (hash.hasOwnProperty(PsychrometricsJS.Variables.W)) {
       this.from_wbtw(hash[PsychrometricsJS.Variables.WBT], hash[PsychrometricsJS.Variables.W], hash[PsychrometricsJS.Variables.P]);
+    }
+
+  } else if (hash.hasOwnProperty(PsychrometricsJS.Variables.DPT)) { 
+    if (hash.hasOwnProperty(PsychrometricsJS.Variables.H)) {
+      this.from_dpth(hash[PsychrometricsJS.Variables.DPT], hash[PsychrometricsJS.Variables.H], hash[PsychrometricsJS.Variables.P]);
+
+    } else if (hash.hasOwnProperty(PsychrometricsJS.Variables.RH)) {
+      this.from_dptrh(hash[PsychrometricsJS.Variables.DPT], hash[PsychrometricsJS.Variables.RH], hash[PsychrometricsJS.Variables.P]);
+    }
+
+  } else if (hash.hasOwnProperty(PsychrometricsJS.Variables.H)) { 
+    if (hash.hasOwnProperty(PsychrometricsJS.Variables.W)) {
+      this.from_hw(hash[PsychrometricsJS.Variables.H], hash[PsychrometricsJS.Variables.W], hash[PsychrometricsJS.Variables.P]);
+
+    } else if (hash.hasOwnProperty(PsychrometricsJS.Variables.RH)) {
+      this.from_hrh(hash[PsychrometricsJS.Variables.H], hash[PsychrometricsJS.Variables.RH], hash[PsychrometricsJS.Variables.P]);
+    }
+
+  } else if (hash.hasOwnProperty(PsychrometricsJS.Variables.W)) { 
+    if (hash.hasOwnProperty(PsychrometricsJS.Variables.RH)) {
+      this.from_wrh(hash[PsychrometricsJS.Variables.W], hash[PsychrometricsJS.Variables.RH], hash[PsychrometricsJS.Variables.P]);
     }
   }
 
@@ -409,24 +603,20 @@ PsychrometricsJS.State.prototype.from_dbtdpt = function(dbt, dpt, p) {
 
 PsychrometricsJS.State.prototype.from_dbtrh = function(dbt, rh, p) {
   this.dbt = dbt; this.rh = rh; this.p = p;
-  var wbt = PsychrometricsJS.solveBisection(PsychrometricsJS.TMIN, this.dbt.to_celsius(), this.rh, 1e-6,
-                        function(wbt) {
-                          return PsychrometricsJS.SI.getRelativeHumidityFromDbtWbt(this.dbt, wbt, this.p);
-                        }.bind({'dbt': this.dbt.to_celsius(), 'p': this.p.to_pascal()}));
+  var wbt = PsychrometricsJS.SI.getWetBulbTemperatureFromDbtRhP(this.dbt.to_celsius(), this.rh.to_zerotoone(), this.p.to_pascal());
   this.wbt = new PsychrometricsJS.Temperature(wbt, PsychrometricsJS.Units.CELSIUS);
 };
 
 PsychrometricsJS.State.prototype.from_dbth = function(dbt, h, p) {
-  this.dbt = dbt; this.h = h; this.p = p; this.w = PsychrometricsJS.SI.getHumidityRatioFromDbtH(this.dbt.to_celsius(), this.h);
+  this.dbt = dbt; this.h = h; this.p = p; 
+  var w = PsychrometricsJS.SI.getHumidityRatioFromDbtH(this.dbt.to_celsius(), this.h.to_kjkgda());
+  this.w = new PsychrometricsJS.HumidityRatio(w, PsychrometricsJS.Units.KGKGDA);
   this.from_dbtw(this.dbt, this.w, this.p);
 };
 
 PsychrometricsJS.State.prototype.from_dbtw = function(dbt, w, p) {
   this.dbt = dbt; this.w = w; this.p = p;
-  var wbt = PsychrometricsJS.solveBisection(PsychrometricsJS.TMIN, this.dbt.to_celsius(), this.w, 1e-6,
-                        function(wbt) {
-                          return PsychrometricsJS.SI.getHumidityRatioFromDbtWbt(this.dbt, wbt, this.p);
-                        }.bind({'dbt': this.dbt.to_celsius(), 'p': this.p.to_pascal()}));
+  var wbt = PsychrometricsJS.SI.getWetBulbTemperatureFromDbtWP(this.dbt.to_celsius(), this.w.to_kgkgda(), this.p.to_pascal());
   this.wbt = new PsychrometricsJS.Temperature(wbt, PsychrometricsJS.Units.CELSIUS);
 };
 
@@ -442,10 +632,7 @@ PsychrometricsJS.State.prototype.from_wbtdpt = function(wbt, dpt, p) {
 
 PsychrometricsJS.State.prototype.from_wbtrh = function(wbt, rh, p) {
   this.wbt = wbt; this.rh = rh; this.p = p;
-  var dbt = PsychrometricsJS.solveGradient(PsychrometricsJS.TMIN, PsychrometricsJS.TMAX, this.wbt.to_celsius(), this.rh, 0.1, 1e-6,
-                        function(dbt) {
-                          return PsychrometricsJS.SI.getRelativeHumidityFromDbtWbt(dbt, this.wbt, this.p);
-                        }.bind({'wbt': this.wbt.to_celsius(), 'p': this.p.to_pascal()}));
+  var dbt = PsychrometricsJS.SI.getDryBulbTemperatureFromWbtRhP(this.wbt.to_celsius(), this.rh.to_zerotoone(), this.p.to_pascal());
   this.dbt = new PsychrometricsJS.Temperature(dbt, PsychrometricsJS.Units.CELSIUS);
 };
 
@@ -465,11 +652,79 @@ PsychrometricsJS.State.prototype.from_wbth = function(wbt, h, p) {
 
 PsychrometricsJS.State.prototype.from_wbtw = function(wbt, w, p) {
   this.wbt = wbt; this.w = w; this.p = p;
-  var dbt = PsychrometricsJS.solveGradient(PsychrometricsJS.TMIN, PsychrometricsJS.TMAX, this.wbt.to_celsius(), this.w, 1.0, 1e-6,
+  var dbt = PsychrometricsJS.solveGradient(PsychrometricsJS.TMIN, PsychrometricsJS.TMAX, this.wbt.to_celsius(), this.w.to_kgkgda(), 1.0, 1e-6,
                         function(dbt) {
                           return PsychrometricsJS.SI.getHumidityRatioFromDbtWbt(dbt, this.wbt, this.p);
                         }.bind({'wbt': this.wbt.to_celsius(), 'p': this.p.to_pascal()}));
   this.dbt = new PsychrometricsJS.Temperature(dbt, PsychrometricsJS.Units.CELSIUS);
+};
+
+PsychrometricsJS.State.prototype.from_dpth = function(dpt, h, p) {
+  this.dpt = dpt; this.h = h; this.p = p;
+  var w = PsychrometricsJS.SI.getHumidityRatioFromDpt(this.dpt.to_celsius(), this.p.to_pascal());
+  this.w = new PsychrometricsJS.HumidityRatio(w, PsychrometricsJS.Units.KGKGDA);
+
+  var dbt = PsychrometricsJS.SI.getDryBulbTemperatureFromHW(this.h.to_kjkgda(), this.w.to_kgkgda()); // initial guess
+  var wbt = PsychrometricsJS.SI.getWetBulbTemperatureFromDbtWP(dbt, this.w.to_kgkgda(), this.p.to_pascal());
+
+  this.dbt = new PsychrometricsJS.Temperature(dbt, PsychrometricsJS.Units.CELSIUS);
+  this.wbt = new PsychrometricsJS.Temperature(wbt, PsychrometricsJS.Units.CELSIUS);
+};
+
+PsychrometricsJS.State.prototype.from_dptrh = function(dpt, rh, p) {
+  this.dpt = dpt;
+  var w = PsychrometricsJS.SI.getHumidityRatioFromDpt(dpt.to_celsius(), p.to_pascal());
+  this.w = new PsychrometricsJS.HumidityRatio(w, PsychrometricsJS.Units.KGKGDA);
+  this.from_wrh(this.w, rh, p);
+};
+
+PsychrometricsJS.State.prototype.from_hw = function(h, w, p) {
+  this.h = h; this.w = w; this.p = p;
+
+  var dbt = PsychrometricsJS.SI.getDryBulbTemperatureFromHW(this.h.to_kjkgda(), this.w.to_kgkgda()); // initial guess
+  var wbt = PsychrometricsJS.SI.getWetBulbTemperatureFromDbtWP(dbt, this.w.to_kgkgda(), this.p.to_pascal());
+
+  this.dbt = new PsychrometricsJS.Temperature(dbt, PsychrometricsJS.Units.CELSIUS);
+  this.wbt = new PsychrometricsJS.Temperature(wbt, PsychrometricsJS.Units.CELSIUS);
+};
+
+PsychrometricsJS.State.prototype.from_hrh = function(h, rh, p) {
+  this.h = h; this.rh = rh; this.p = p;
+  
+  var dbt = null; var dbtp = null; var wbt = null; var wbtp = null; var w;
+  var it = 0; var err = 1e-4;
+
+  dbt = PsychrometricsJS.SI.getDryBulbTemperatureFromHW(this.h.to_kjkgda(), 2.0*PsychrometricsJS.WMIN); // initial guess with little moisture
+  while ((dbtp == null) || (wbtp == null) || ((it < 100) && ((Math.abs(dbt-dbtp)>err) || (Math.abs(wbt-wbtp)>err)))) {
+    dbtp = dbt; wbtp = wbt;
+    w = PsychrometricsJS.SI.getHumidityRatioFromDbtH(dbt, this.h.to_kjkgda());
+    wbt = PsychrometricsJS.SI.getWetBulbTemperatureFromDbtWP(dbt, w, this.p.to_pascal());
+    dbt = PsychrometricsJS.SI.getDryBulbTemperatureFromWbtRhP(wbt, this.rh.to_zerotoone(), this.p.to_pascal());
+    it ++;
+  }
+  if ((Math.abs(dbt-dbtp)>err) || (Math.abs(wbt-wbtp)>err)) { throw "Failed to converge marching algorithm..."; }
+
+  this.dbt = new PsychrometricsJS.Temperature(dbt, PsychrometricsJS.Units.CELSIUS);
+  this.wbt = new PsychrometricsJS.Temperature(wbt, PsychrometricsJS.Units.CELSIUS);
+};
+
+PsychrometricsJS.State.prototype.from_wrh = function(w, rh, p) {
+  this.w = w; this.rh = rh; this.p = p;
+  
+  var dbt = null; var dbtp = null; var wbt = null; var wbtp = null;
+  var it = 0; var err = 1e-4;
+
+  wbt = PsychrometricsJS.SI.getDewPointTemperature(this.w.to_kgkgda(), this.p.to_pascal());  
+  while ((dbtp == null) || (wbtp == null) || ((it < 100) && ((Math.abs(dbt-dbtp)>err) || (Math.abs(wbt-wbtp)>err)))) {
+    dbtp = dbt; wbtp = wbt;
+    dbt = PsychrometricsJS.SI.getDryBulbTemperatureFromWbtRhP(wbt, this.rh.to_zerotoone(), this.p.to_pascal());
+    wbt = PsychrometricsJS.SI.getWetBulbTemperatureFromDbtWP(dbt, this.w.to_kgkgda(), this.p.to_pascal());
+    it ++;
+  }
+  if ((Math.abs(dbt-dbtp)>err) || (Math.abs(wbt-wbtp)>err)) { throw "Failed to converge marching algorithm..."; }
+
+  this.dbt = new PsychrometricsJS.Temperature(dbt, PsychrometricsJS.Units.CELSIUS);
+  this.wbt = new PsychrometricsJS.Temperature(wbt, PsychrometricsJS.Units.CELSIUS);
 };
 
 /**
@@ -477,7 +732,7 @@ PsychrometricsJS.State.prototype.from_wbtw = function(wbt, w, p) {
  */
 PsychrometricsJS.State.prototype.getDewPointTemperature = function() {
   if (this.dpt == null) {
-    var dpt = PsychrometricsJS.SI.getDewPointTemperature(this.getHumidityRatio(), this.p.to_pascal());
+    var dpt = PsychrometricsJS.SI.getDewPointTemperature(this.getHumidityRatio().to_kgkgda(), this.p.to_pascal());
     this.dpt = new PsychrometricsJS.Temperature(dpt, PsychrometricsJS.Units.CELSIUS);
   }
   return this.dpt;
@@ -489,8 +744,8 @@ PsychrometricsJS.State.prototype.getDryBulbTemperature = function() {
 
 PsychrometricsJS.State.prototype.getEnthalpy = function() {
   if (this.h == null) {
-    var h = PsychrometricsJS.SI.getEnthalpy(this.dbt.to_celsius(), this.getHumidityRatio());
-    this.h = h;
+    var h = PsychrometricsJS.SI.getEnthalpy(this.dbt.to_celsius(), this.getHumidityRatio().to_kgkgda());
+    this.h = new PsychrometricsJS.Enthalpy(h, PsychrometricsJS.Units.KJKGDA);
   }
   return this.h;
 };
@@ -502,15 +757,15 @@ PsychrometricsJS.State.prototype.getWetBulbTemperature = function() {
 PsychrometricsJS.State.prototype.getHumidityRatio = function() {
   if (this.w == null) {
     var w = PsychrometricsJS.SI.getHumidityRatioFromDbtWbt(this.dbt.to_celsius(), this.wbt.to_celsius(), this.p.to_pascal());
-    this.w = w;
+    this.w = new PsychrometricsJS.HumidityRatio(w, PsychrometricsJS.Units.KGKGDA);
   }
   return this.w;
 };
 
 PsychrometricsJS.State.prototype.getRelativeHumidity = function() {
   if (this.rh == null) {
-    var rh = PsychrometricsJS.SI.getRelativeHumidityFromDbtW(this.dbt.to_celsius(), this.getHumidityRatio(), this.p.to_pascal());
-    this.rh = rh;
+    var rh = PsychrometricsJS.SI.getRelativeHumidityFromDbtW(this.dbt.to_celsius(), this.getHumidityRatio().to_kgkgda(), this.p.to_pascal());
+    this.rh = new PsychrometricsJS.RelativeHumidity(rh, PsychrometricsJS.Units.ZEROTOONE);
   }
   return this.rh;
 };

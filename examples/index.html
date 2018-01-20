@@ -187,6 +187,11 @@ $(window).on('load',
             <option value="wbtrh">Wet-bulb temperature/relative humidity</option>
             <option value="wbtw">Wet-bulb temperature/Humidity ratio</option>
             <!-- Ignore this option as wet-bulb and enthalpy are too aligned to solve meaningfully <option value="wbth">Wet-bulb temperature/Enthalpy</option> -->
+            <option value="dpth">Dew-point temperature/Enthalpy</option>
+            <option value="dptrh">Dew-point temperature/Relative humidity</option>
+            <option value="hw">Enthalpy/Humidity ratio</option>
+            <option value="hrh">Enthalpy/Relative humidity</option>
+            <option value="wrh">Humidity ratio/Relative humidity</option>
           </select>
         </div>
 
@@ -248,15 +253,15 @@ var getPsychrometricsStateInputState = function() {
       break;
     case 'dbtrh':
       hash[PsychrometricsJS.Variables.DBT] = new PsychrometricsJS.Temperature(parseFloat($('#psyst-drybulbtemperature').val()), PsychrometricsJS.Units.CELSIUS);
-      hash[PsychrometricsJS.Variables.RH] = parseFloat($('#psyst-relativehumidity').val())/100.0;
+      hash[PsychrometricsJS.Variables.RH] = new PsychrometricsJS.RelativeHumidity(parseFloat($('#psyst-relativehumidity').val()), PsychrometricsJS.Units.PERCENTAGE);
       break;
     case 'dbtw':
       hash[PsychrometricsJS.Variables.DBT] = new PsychrometricsJS.Temperature(parseFloat($('#psyst-drybulbtemperature').val()), PsychrometricsJS.Units.CELSIUS);
-      hash[PsychrometricsJS.Variables.W] = parseFloat($('#psyst-humidityratio').val());
+      hash[PsychrometricsJS.Variables.W] = new PsychrometricsJS.HumidityRatio(parseFloat($('#psyst-humidityratio').val()), PsychrometricsJS.Units.KGKGDA);
       break;
     case 'dbth':
       hash[PsychrometricsJS.Variables.DBT] = new PsychrometricsJS.Temperature(parseFloat($('#psyst-drybulbtemperature').val()), PsychrometricsJS.Units.CELSIUS);
-      hash[PsychrometricsJS.Variables.H] = parseFloat($('#psyst-enthalpy').val());
+      hash[PsychrometricsJS.Variables.H] = new PsychrometricsJS.Enthalpy(parseFloat($('#psyst-enthalpy').val()), PsychrometricsJS.Units.KJKGDA);
       break;
     case 'wbtdpt':
       hash[PsychrometricsJS.Variables.WBT] = new PsychrometricsJS.Temperature(parseFloat($('#psyst-wetbulbtemperature').val()), PsychrometricsJS.Units.CELSIUS);
@@ -264,11 +269,31 @@ var getPsychrometricsStateInputState = function() {
       break;
     case 'wbtrh':
       hash[PsychrometricsJS.Variables.WBT] = new PsychrometricsJS.Temperature(parseFloat($('#psyst-wetbulbtemperature').val()), PsychrometricsJS.Units.CELSIUS);
-      hash[PsychrometricsJS.Variables.RH] = parseFloat($('#psyst-relativehumidity').val())/100.0;
+      hash[PsychrometricsJS.Variables.RH] = new PsychrometricsJS.RelativeHumidity(parseFloat($('#psyst-relativehumidity').val()), PsychrometricsJS.Units.PERCENTAGE);
       break;
     case 'wbtw':
       hash[PsychrometricsJS.Variables.WBT] = new PsychrometricsJS.Temperature(parseFloat($('#psyst-wetbulbtemperature').val()), PsychrometricsJS.Units.CELSIUS);
-      hash[PsychrometricsJS.Variables.W] = parseFloat($('#psyst-humidityratio').val());
+      hash[PsychrometricsJS.Variables.W] = new PsychrometricsJS.HumidityRatio(parseFloat($('#psyst-humidityratio').val()), PsychrometricsJS.Units.KGKGDA);
+      break;
+    case 'dpth':
+      hash[PsychrometricsJS.Variables.DPT] = new PsychrometricsJS.Temperature(parseFloat($('#psyst-dewpointtemperature').val()), PsychrometricsJS.Units.CELSIUS);
+      hash[PsychrometricsJS.Variables.H] = new PsychrometricsJS.Enthalpy(parseFloat($('#psyst-enthalpy').val()), PsychrometricsJS.Units.KJKGDA);
+      break;
+    case 'dptrh':
+      hash[PsychrometricsJS.Variables.DPT] = new PsychrometricsJS.Temperature(parseFloat($('#psyst-dewpointtemperature').val()), PsychrometricsJS.Units.CELSIUS);
+      hash[PsychrometricsJS.Variables.RH] = new PsychrometricsJS.RelativeHumidity(parseFloat($('#psyst-relativehumidity').val()), PsychrometricsJS.Units.PERCENTAGE);
+      break;
+    case 'hw':
+      hash[PsychrometricsJS.Variables.H] = new PsychrometricsJS.Enthalpy(parseFloat($('#psyst-enthalpy').val()), PsychrometricsJS.Units.KJKGDA);
+      hash[PsychrometricsJS.Variables.W] = new PsychrometricsJS.HumidityRatio(parseFloat($('#psyst-humidityratio').val()), PsychrometricsJS.Units.KGKGDA);
+      break;
+    case 'hrh':
+      hash[PsychrometricsJS.Variables.H] = new PsychrometricsJS.Enthalpy(parseFloat($('#psyst-enthalpy').val()), PsychrometricsJS.Units.KJKGDA);
+      hash[PsychrometricsJS.Variables.RH] = new PsychrometricsJS.RelativeHumidity(parseFloat($('#psyst-relativehumidity').val()), PsychrometricsJS.Units.PERCENTAGE);
+      break;
+    case 'wrh':
+      hash[PsychrometricsJS.Variables.W] = new PsychrometricsJS.HumidityRatio(parseFloat($('#psyst-humidityratio').val()), PsychrometricsJS.Units.KGKGDA);
+      hash[PsychrometricsJS.Variables.RH] = new PsychrometricsJS.RelativeHumidity(parseFloat($('#psyst-relativehumidity').val()), PsychrometricsJS.Units.PERCENTAGE);
       break;
       // throw "Input combination " + $('#psyst-select-input').val() + ' is not implemented yet...';
       // break;
@@ -282,10 +307,10 @@ var enablePsychrometricsState = function(option) {
   var hash = {
       '#psyst-drybulbtemperature': ! /^(dbtwbt|dbtdpt|dbtrh|dbtw|dbth)$/.test(option),
       '#psyst-wetbulbtemperature': ! /^(dbtwbt|wbtdpt|wbtrh|wbtw|wbth)$/.test(option),
-      '#psyst-dewpointtemperature': ! /^(dbtdpt|wbtdpt)$/.test(option),
-      '#psyst-relativehumidity': ! /^(dbtrh|wbtrh)$/.test(option),
-      '#psyst-humidityratio': ! /^(dbtw|wbtw)$/.test(option),
-      '#psyst-enthalpy': ! /^(dbth|wbth)$/.test(option)
+      '#psyst-dewpointtemperature': ! /^(dbtdpt|wbtdpt|dpth|dptrh)$/.test(option),
+      '#psyst-relativehumidity': ! /^(dbtrh|wbtrh|dptrh|hrh|wrh)$/.test(option),
+      '#psyst-humidityratio': ! /^(dbtw|wbtw|hw|wrh)$/.test(option),
+      '#psyst-enthalpy': ! /^(dbth|wbth|dpth|hw|hrh)$/.test(option)
     };
   for (var k in hash) {
     if (hash.hasOwnProperty(k)) {
@@ -299,9 +324,9 @@ var updatePsychrometricsState = function() {
   if ($('#psyst-drybulbtemperature').prop('disabled')) { $('#psyst-drybulbtemperature').val(state.getDryBulbTemperature().to_celsius()); }
   if ($('#psyst-wetbulbtemperature').prop('disabled')) { $('#psyst-wetbulbtemperature').val(state.getWetBulbTemperature().to_celsius()); }
   if ($('#psyst-dewpointtemperature').prop('disabled')) { $('#psyst-dewpointtemperature').val(state.getDewPointTemperature().to_celsius()); }
-  if ($('#psyst-relativehumidity').prop('disabled')) { $('#psyst-relativehumidity').val(state.getRelativeHumidity()*100.0); }
-  if ($('#psyst-humidityratio').prop('disabled')) { $('#psyst-humidityratio').val(state.getHumidityRatio()); }
-  if ($('#psyst-enthalpy').prop('disabled')) { $('#psyst-enthalpy').val(state.getEnthalpy()); }
+  if ($('#psyst-relativehumidity').prop('disabled')) { $('#psyst-relativehumidity').val(state.getRelativeHumidity().to_percentage()); }
+  if ($('#psyst-humidityratio').prop('disabled')) { $('#psyst-humidityratio').val(state.getHumidityRatio().to_kgkgda()); }
+  if ($('#psyst-enthalpy').prop('disabled')) { $('#psyst-enthalpy').val(state.getEnthalpy().to_kjkgda()); }
 };
 
 
