@@ -37,6 +37,7 @@
             <li><a href="#StandardConditions">Standard Conditions</a></li>
             <li><a href="#Temperature">Temperature Convertion</a></li>
             <li><a href="#WaterVaporSatPressure">Water Vapor Saturation Pressure</a></li>
+            <li><a href="#PsychrometricsState">Psychrometrics State</a></li>
           </ul>
         </div><!-- /.navbar-collapse -->
       </div><!-- /.container-fluid -->
@@ -47,7 +48,11 @@
         <a name="home"></a>
         <h1>Home</h1>
       </div>
-      <p>PsychrometricsJS is a javascript library for psychrometric calculation. The psychrometrics calculation is based on ASHRAE Handbook Fundamentals 2013.</p>
+      <p>PsychrometricsJS is a javascript library for psychrometric calculation. 
+         The psychrometrics calculation is based on ASHRAE Handbook Fundamentals 2013.</p>
+      <p>Download from 
+         <a href="https://github.com/juliendecharentenay/PsychrometricsJS">https://github.com/juliendecharentenay/PsychrometricsJS</a>
+         </p>
      <blockquote>
        <p id="notice"></p>
      </blockquote>
@@ -89,8 +94,8 @@ $(window).on('load',
 
 <script>
 var updateStandardConditions = function(z) {
-  $('#standard-pressure').val(PsychrometricsJS.getStandardAtmPressure(z).to_pascal());
-  $('#standard-temperature').val(PsychrometricsJS.getStandardAtmTemperature(z).to_celsius());
+  $('#standard-pressure').val(PsychrometricsJS.getStandardAtmPressure(z).to_pascal().toFixed(2));
+  $('#standard-temperature').val(PsychrometricsJS.getStandardAtmTemperature(z).to_celsius().toFixed(2));
 };
 
 $(window).on('load', 
@@ -102,7 +107,7 @@ $(window).on('load',
 </script>
 
       <div class="page-header">
-        <a name="temperature"></a>
+        <a name="Temperature"></a>
         <h1>Temperature conversion</h1>
       </div>
       <blockquote>
@@ -127,9 +132,9 @@ $(window).on('load',
 
 <script>
 var updateTemperature = function(temperature) {
-  $('#temp-conv-celsius').val(temperature.to_celsius());
-  $('#temp-conv-kelvin').val(temperature.to_kelvin());
-  $('#temp-conv-fahrenheit').val(temperature.to_fahrenheit());
+  $('#temp-conv-celsius').val(temperature.to_celsius().toFixed(2));
+  $('#temp-conv-kelvin').val(temperature.to_kelvin().toFixed(2));
+  $('#temp-conv-fahrenheit').val(temperature.to_fahrenheit().toFixed(2));
 };
 
 $(window).on('load', 
@@ -142,7 +147,7 @@ $(window).on('load',
 </script>
 
       <div class="page-header">
-        <a name="temperature"></a>
+        <a name="WaterVaporSatPressure"></a>
         <h1>Water Vapor Saturation Pressure</h1>
       </div>
       <blockquote>
@@ -160,7 +165,7 @@ $(window).on('load',
       </blockquote>
 <script>
 var updateWaterVaporSaturationPressure = function(temperature) {
-  $('#water-vap-satpressure-pressure').val(PsychrometricsJS.SI.getWaterVaporSaturationPressure(temperature));
+  $('#water-vap-satpressure-pressure').val(PsychrometricsJS.SI.getWaterVaporSaturationPressure(temperature).toFixed(2));
 };
 
 $(window).on('load', 
@@ -172,6 +177,7 @@ $(window).on('load',
 </script>
 
       <div class="page-header">
+        <a name="PsychrometricsState"></a>
         <h1>Psychrometrics State</h1>
       </div>
       <blockquote>
@@ -321,12 +327,12 @@ var enablePsychrometricsState = function(option) {
 
 var updatePsychrometricsState = function() {
   var state = getPsychrometricsStateInputState();
-  if ($('#psyst-drybulbtemperature').prop('disabled')) { $('#psyst-drybulbtemperature').val(state.getDryBulbTemperature().to_celsius()); }
-  if ($('#psyst-wetbulbtemperature').prop('disabled')) { $('#psyst-wetbulbtemperature').val(state.getWetBulbTemperature().to_celsius()); }
-  if ($('#psyst-dewpointtemperature').prop('disabled')) { $('#psyst-dewpointtemperature').val(state.getDewPointTemperature().to_celsius()); }
-  if ($('#psyst-relativehumidity').prop('disabled')) { $('#psyst-relativehumidity').val(state.getRelativeHumidity().to_percentage()); }
-  if ($('#psyst-humidityratio').prop('disabled')) { $('#psyst-humidityratio').val(state.getHumidityRatio().to_kgkgda()); }
-  if ($('#psyst-enthalpy').prop('disabled')) { $('#psyst-enthalpy').val(state.getEnthalpy().to_kjkgda()); }
+  if ($('#psyst-drybulbtemperature').prop('disabled')) { $('#psyst-drybulbtemperature').val(state.getDryBulbTemperature().to_celsius().toFixed(2)); }
+  if ($('#psyst-wetbulbtemperature').prop('disabled')) { $('#psyst-wetbulbtemperature').val(state.getWetBulbTemperature().to_celsius().toFixed(2)); }
+  if ($('#psyst-dewpointtemperature').prop('disabled')) { $('#psyst-dewpointtemperature').val(state.getDewPointTemperature().to_celsius().toFixed(2)); }
+  if ($('#psyst-relativehumidity').prop('disabled')) { $('#psyst-relativehumidity').val(state.getRelativeHumidity().to_percentage().toFixed(1)); }
+  if ($('#psyst-humidityratio').prop('disabled')) { $('#psyst-humidityratio').val(state.getHumidityRatio().to_kgkgda().toFixed(4)); }
+  if ($('#psyst-enthalpy').prop('disabled')) { $('#psyst-enthalpy').val(state.getEnthalpy().to_kjkgda().toFixed(2)); }
 };
 
 
