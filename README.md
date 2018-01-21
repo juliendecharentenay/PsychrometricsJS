@@ -55,9 +55,11 @@ temperature.to_celsius(); // return 14.35
 
 Lastly, SI functions are available under PsychrometricsJS.SI.
 
+## Example
 
-License
-=======
+[http://juliendecharentenay.eu5.net/index.html]
+
+## License
 Copyright (C) 2018 Julien de Charentenay
 Licensed under MIT license
 
