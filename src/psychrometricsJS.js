@@ -4,7 +4,7 @@
  *
  * Licensed under MIT license
  *
- * v x.x.x
+ * v x.x
  */
 
 var PsychrometricsJS = PsychrometricsJS || {};
@@ -18,7 +18,7 @@ PsychrometricsJS.website = "http://juliendecharentenay.wordpress.com";
 
 PsychrometricsJS.TMIN = -100.0;
 PsychrometricsJS.TMAX = 200.0;
-PsychrometricsJS.WMIN = 1e-5;
+PsychrometricsJS.WMIN = 1e-8;
 
 PsychrometricsJS.Units = {};
 /**
@@ -58,6 +58,9 @@ PsychrometricsJS.Pressure = function(value, unit) {
     case PsychrometricsJS.Units.KILOPASCAL:
       this.from_kilopascal(value);
       break;
+    case PsychrometricsJS.Units.METER:
+        this.from_length(new PsychrometricsJS.Length(value, PsychrometricsJS.Units.METER));
+        break;
     default:
       throw "Pressure unit " + unit + " not supported";
   }
@@ -65,10 +68,15 @@ PsychrometricsJS.Pressure = function(value, unit) {
 };
 
 PsychrometricsJS.Pressure.prototype.from_pascal = function(value) { this.value = value; }
-PsychrometricsJS.Pressure.prototype.to_pascal = function(value) { return this.value; }
+PsychrometricsJS.Pressure.prototype.to_pascal = function() { return this.value; }
 
 PsychrometricsJS.Pressure.prototype.from_kilopascal = function(value) { this.value = value*1e3; }
-PsychrometricsJS.Pressure.prototype.to_kilopascal = function(value) { return this.value/1e3; }
+PsychrometricsJS.Pressure.prototype.to_kilopascal = function() { return this.value/1e3; }
+
+PsychrometricsJS.Pressure.prototype.from_length = function(value) { this.value = 101325.0*Math.pow(1.0-2.25577e-5*value.to_meter(),5.2559); }
+PsychrometricsJS.Pressure.prototype.to_length = function() { 
+	return new PsychrometricsJS.Length((1.0-Math.pow(this.value/101325.0,1.0/5.2559))/2.25577e-5, PsychrometricsJS.Units.METER);
+}
 
 /**
  * Temperature 
@@ -214,7 +222,7 @@ PsychrometricsJS.SI.G = 9.80665;   // Gravity constant, m/s2
  */
 PsychrometricsJS.SI.getWaterVaporSaturationPressure = function(t) {
   if ((t < -100.0) || (t > 200.0)) {
-    throw "Water vaport saturation pressure only valid for temperature between -100.0 and +200.0 Celsius. Temperature provided is: " + t;
+    throw "Water vapor saturation pressure only valid for temperature between -100.0 and +200.0 Celsius. Temperature provided is: " + t;
   }
 
   // Constants for -100 to 0 (over ice)
@@ -222,9 +230,9 @@ PsychrometricsJS.SI.getWaterVaporSaturationPressure = function(t) {
   var c2 = 6.3925247;
   var c3 = -9.6778430e-3;
   var c4 = 6.2215701e-7;
-  var c5 = 2.0747825e-09
-  var c6 = -9.4840240e-13
-  var c7 = 4.1635019e00
+  var c5 = 2.0747825e-09;
+  var c6 = -9.4840240e-13;
+  var c7 = 4.1635019e00;
   // Constants for 0 to 200 (over liquid)
   var c8 = -5.8002206e3;
   var c9 = 1.3914993;
@@ -333,7 +341,7 @@ PsychrometricsJS.SI.getDewPointTemperature = function(w, p) {
   var c18 = 0.4569;
   var dpt = c14+alpha*(c15+alpha*(c16+alpha*c17))+c18*Math.pow(pw, 0.1984);
   dpt = (dpt >= 0.0) ? dpt : 6.09 + alpha*(12.608 + 0.4959*alpha);
-  return dpt
+  return dpt;
 };
 
 /**
@@ -500,6 +508,247 @@ PsychrometricsJS.getStandardAtmPressure = function(z) {
 PsychrometricsJS.getStandardAtmTemperature = function(z) {
   return new PsychrometricsJS.Temperature(15 - 0.0065*z.to_meter(), PsychrometricsJS.Units.CELSIUS); // C
 };
+
+/**
+ * Factory methods to generate Psychrometrics state
+ */
+PsychrometricsJS.Factory = {};
+PsychrometricsJS.Factory.SI = {};
+
+/**
+ * Make psychrometrics state from dry-bulb, wet-bulb temperature and pressure
+ *
+ * Input:
+ *  dbt: dry-bulb temperature (C)
+ *  wbt: wet-bulb temperature (C)
+ *  p: pressure (Pa)
+ * Output:
+ *  psychrometrics State object
+ */
+PsychrometricsJS.Factory.SI.makeDbtWbtP = function(dbt, wbt, p) {
+  hash = {};
+  hash[PsychrometricsJS.Variables.DBT] = new Psychrometrics.Temperature(dbt, PsychrometricsJS.Units.CELSIUS);
+  hash[PsychrometricsJS.Variables.WBT] = new Psychrometrics.Temperature(wbt, PsychrometricsJS.Units.CELSIUS);
+  hash[PsychrometricsJS.Variables.P] = new Psychrometrics.Pressure(p, PsychrometricsJS.Units.PASCAL);
+  return new PsychrometricsJS.State(hash);
+};
+
+/**
+ * Make psychrometrics state from dry-bulb, dew-point temperature and pressure
+ *
+ * Input:
+ *  dbt: dry-bulb temperature (C)
+ *  dpt: dew-point temperature (C)
+ *  p: pressure (Pa)
+ * Output:
+ *  psychrometrics State object
+ */
+PsychrometricsJS.Factory.SI.makeDbtDptP = function(dbt, dpt, p) {
+  hash = {};
+  hash[PsychrometricsJS.Variables.DBT] = new Psychrometrics.Temperature(dbt, PsychrometricsJS.Units.CELSIUS);
+  hash[PsychrometricsJS.Variables.DPT] = new Psychrometrics.Temperature(dpt, PsychrometricsJS.Units.CELSIUS);
+  hash[PsychrometricsJS.Variables.P] = new Psychrometrics.Pressure(p, PsychrometricsJS.Units.PASCAL);
+  return new PsychrometricsJS.State(hash);
+};
+
+/**
+ * Make psychrometrics state from dry-bulb temperature, relative humidity and pressure
+ *
+ * Input:
+ *  dbt: dry-bulb temperature (C)
+ *  rh: relative humidity (0 to 1)
+ *  p: pressure (Pa)
+ * Output:
+ *  psychrometrics State object
+ */
+PsychrometricsJS.Factory.SI.makeDbtRHP = function(dbt, rh, p) {
+  hash = {};
+  hash[PsychrometricsJS.Variables.DBT] = new Psychrometrics.Temperature(dbt, PsychrometricsJS.Units.CELSIUS);
+  hash[PsychrometricsJS.Variables.RH] = new Psychrometrics.RelativeHumidity(rh, PsychrometricsJS.Units.ZEROTOONE);
+  hash[PsychrometricsJS.Variables.P] = new Psychrometrics.Pressure(p, PsychrometricsJS.Units.PASCAL);
+  return new PsychrometricsJS.State(hash);
+};
+
+/**
+ * Make psychrometrics state from dry-bulb temperature, enthalpy and pressure
+ *
+ * Input:
+ *  dbt: dry-bulb temperature (C)
+ *  h: enthalpy (kj/kgda)
+ *  p: pressure (Pa)
+ * Output:
+ *  psychrometrics State object
+ */
+PsychrometricsJS.Factory.SI.makeDbtHP = function(dbt, h, p) {
+  hash = {};
+  hash[PsychrometricsJS.Variables.DBT] = new Psychrometrics.Temperature(dbt, PsychrometricsJS.Units.CELSIUS);
+  hash[PsychrometricsJS.Variables.H] = new Psychrometrics.Enthalpy(h, PsychrometricsJS.Units.KJKGDA);
+  hash[PsychrometricsJS.Variables.P] = new Psychrometrics.Pressure(p, PsychrometricsJS.Units.PASCAL);
+  return new PsychrometricsJS.State(hash);
+};
+
+/**
+ * Make psychrometrics state from dry-bulb temperature, humidity ratio and pressure
+ *
+ * Input:
+ *  dbt: dry-bulb temperature (C)
+ *  w: humidity ratio (kg/kgda)
+ *  p: pressure (Pa)
+ * Output:
+ *  psychrometrics State object
+ */
+PsychrometricsJS.Factory.SI.makeDbtWP = function(dbt, w, p) {
+  hash = {};
+  hash[PsychrometricsJS.Variables.DBT] = new Psychrometrics.Temperature(dbt, PsychrometricsJS.Units.CELSIUS);
+  hash[PsychrometricsJS.Variables.W] = new Psychrometrics.HumidityRatio(w, PsychrometricsJS.Units.KGKGDA);
+  hash[PsychrometricsJS.Variables.P] = new Psychrometrics.Pressure(p, PsychrometricsJS.Units.PASCAL);
+  return new PsychrometricsJS.State(hash);
+};
+
+/**
+ * Make psychrometrics state from wet-bulb temperature, dew-point temperature and pressure
+ *
+ * Input:
+ *  wbt: wet-bulb temperature (C)
+ *  dpt: dew-point temperature (C)
+ *  p: pressure (Pa)
+ * Output:
+ *  psychrometrics State object
+ */
+PsychrometricsJS.Factory.SI.makeWbtDptP = function(wbt, dpt, p) {
+  hash = {};
+  hash[PsychrometricsJS.Variables.WBT] = new Psychrometrics.Temperature(wbt, PsychrometricsJS.Units.CELSIUS);
+  hash[PsychrometricsJS.Variables.DPT] = new Psychrometrics.Temperature(dpt, PsychrometricsJS.Units.CELSIUS);
+  hash[PsychrometricsJS.Variables.P] = new Psychrometrics.Pressure(p, PsychrometricsJS.Units.PASCAL);
+  return new PsychrometricsJS.State(hash);
+};
+
+/**
+ * Make psychrometrics state from wet-bulb temperature, relative humidity and pressure
+ *
+ * Input:
+ *  wbt: wet-bulb temperature (C)
+ *  rh: relative humidity (0 to 1)
+ *  p: pressure (Pa)
+ * Output:
+ *  psychrometrics State object
+ */
+PsychrometricsJS.Factory.SI.makeWbtRHP = function(wbt, rh, p) {
+  hash = {};
+  hash[PsychrometricsJS.Variables.WBT] = new Psychrometrics.Temperature(wbt, PsychrometricsJS.Units.CELSIUS);
+  hash[PsychrometricsJS.Variables.RH] = new Psychrometrics.RelativeHumidity(rh, PsychrometricsJS.Units.ZEROTOONE);
+  hash[PsychrometricsJS.Variables.P] = new Psychrometrics.Pressure(p, PsychrometricsJS.Units.PASCAL);
+  return new PsychrometricsJS.State(hash);
+};
+
+/**
+ * Make psychrometrics state from wet-bulb temperature, humidity ratio and pressure
+ *
+ * Input:
+ *  wbt: wet-bulb temperature (C)
+ *  w: humidity ratio (kg/kgda)
+ *  p: pressure (Pa)
+ * Output:
+ *  psychrometrics State object
+ */
+PsychrometricsJS.Factory.SI.makeWbtWP = function(wbt, w, p) {
+  hash = {};
+  hash[PsychrometricsJS.Variables.WBT] = new Psychrometrics.Temperature(wbt, PsychrometricsJS.Units.CELSIUS);
+  hash[PsychrometricsJS.Variables.W] = new Psychrometrics.HumidityRatio(w, PsychrometricsJS.Units.KGKGDA);
+  hash[PsychrometricsJS.Variables.P] = new Psychrometrics.Pressure(p, PsychrometricsJS.Units.PASCAL);
+  return new PsychrometricsJS.State(hash);
+};
+
+/**
+ * Make psychrometrics state from dew-point temperature, relative humidity and pressure
+ *
+ * Input:
+ *  dpt: dew-point temperature (C)
+ *  rh: relative humidity (0 to 1)
+ *  p: pressure (Pa)
+ * Output:
+ *  psychrometrics State object
+ */
+PsychrometricsJS.Factory.SI.makeDptRHP = function(dpt, rh, p) {
+  hash = {};
+  hash[PsychrometricsJS.Variables.DPT] = new Psychrometrics.Temperature(dpt, PsychrometricsJS.Units.CELSIUS);
+  hash[PsychrometricsJS.Variables.RH] = new Psychrometrics.RelativeHumidity(rh, PsychrometricsJS.Units.ZEROTOONE);
+  hash[PsychrometricsJS.Variables.P] = new Psychrometrics.Pressure(p, PsychrometricsJS.Units.PASCAL);
+  return new PsychrometricsJS.State(hash);
+};
+
+/**
+ * Make psychrometrics state from dew-point temperature, enthalpy and pressure
+ *
+ * Input:
+ *  dpt: dew-point temperature (C)
+ *  h: enthalpy (kJ/kgda)
+ *  p: pressure (Pa)
+ * Output:
+ *  psychrometrics State object
+ */
+PsychrometricsJS.Factory.SI.makeDptHP = function(dpt, h, p) {
+  hash = {};
+  hash[PsychrometricsJS.Variables.DPT] = new Psychrometrics.Temperature(dpt, PsychrometricsJS.Units.CELSIUS);
+  hash[PsychrometricsJS.Variables.H] = new Psychrometrics.Enthalpy(h, PsychrometricsJS.Units.KJKGDA);
+  hash[PsychrometricsJS.Variables.P] = new Psychrometrics.Pressure(p, PsychrometricsJS.Units.PASCAL);
+  return new PsychrometricsJS.State(hash);
+};
+
+/**
+ * Make psychrometrics state from relative humidity, enthalpy and pressure
+ *
+ * Input:
+ *  rh: relative humidity (0 to 1)
+ *  h: enthalpy (kJ/kgda)
+ *  p: pressure (Pa)
+ * Output:
+ *  psychrometrics State object
+ */
+PsychrometricsJS.Factory.SI.makeDptHP = function(dpt, h, p) {
+  hash = {};
+  hash[PsychrometricsJS.Variables.RH] = new Psychrometrics.RelativeHumidity(rh, PsychrometricsJS.Units.ZEROTOONE);
+  hash[PsychrometricsJS.Variables.H] = new Psychrometrics.Enthalpy(h, PsychrometricsJS.Units.KJKGDA);
+  hash[PsychrometricsJS.Variables.P] = new Psychrometrics.Pressure(p, PsychrometricsJS.Units.PASCAL);
+  return new PsychrometricsJS.State(hash);
+};
+
+/**
+ * Make psychrometrics state from relative humidity, humidity ratio and pressure
+ *
+ * Input:
+ *  rh: relative humidity (0 to 1)
+ *  w: humidity ratio (kg/kgda)
+ *  p: pressure (Pa)
+ * Output:
+ *  psychrometrics State object
+ */
+PsychrometricsJS.Factory.SI.makeDptWP = function(dpt, w, p) {
+  hash = {};
+  hash[PsychrometricsJS.Variables.RH] = new Psychrometrics.RelativeHumidity(rh, PsychrometricsJS.Units.ZEROTOONE);
+  hash[PsychrometricsJS.Variables.W] = new Psychrometrics.HumidityRatio(w, PsychrometricsJS.Units.KGKGDA);
+  hash[PsychrometricsJS.Variables.P] = new Psychrometrics.Pressure(p, PsychrometricsJS.Units.PASCAL);
+  return new PsychrometricsJS.State(hash);
+};
+
+/**
+ * Make psychrometrics state from enthalpy, humidity ratio and pressure
+ *
+ * Input:
+ *  h: enthalpy (kJ/kgda)
+ *  w: humidity ratio (kg/kgda)
+ *  p: pressure (Pa)
+ * Output:
+ *  psychrometrics State object
+ */
+PsychrometricsJS.Factory.SI.makeHWP = function(h, w, p) {
+  hash = {};
+  hash[PsychrometricsJS.Variables.H] = new Psychrometrics.Enthalpy(h, PsychrometricsJS.Units.KJKGDA);
+  hash[PsychrometricsJS.Variables.W] = new Psychrometrics.HumidityRatio(w, PsychrometricsJS.Units.KGKGDA);
+  hash[PsychrometricsJS.Variables.P] = new Psychrometrics.Pressure(p, PsychrometricsJS.Units.PASCAL);
+  return new PsychrometricsJS.State(hash);
+};
+
 
 // Define a state
 PsychrometricsJS.Variables = {
@@ -769,4 +1018,15 @@ PsychrometricsJS.State.prototype.getRelativeHumidity = function() {
   }
   return this.rh;
 };
+
+PsychrometricsJS.State.prototype.getDensity = function() {
+  var d = this.getDryAirDensity();
+  return new PsychrometricsJS.Density(d.to_kgm3()*(1.0+this.getHumidityRatio().to_kgkgda()), PsychrometricsJS.Units.KGM3);
+  
+};
+
+PsychrometricsJS.State.prototype.getDryAirDensity = function() {
+  return new PsychrometricsJS.Density(1.0/(0.287042*this.dbt.to_kelvin()*(1.0+1.607858*this.getHumidityRatio().to_kgkgda())/this.p.to_kilopascal()), PsychrometricsJS.Units.KGM3);
+};
+
 
