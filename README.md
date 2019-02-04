@@ -57,7 +57,7 @@ Lastly, SI functions are available under PsychrometricsJS.SI.
 
 ## Example
 
-http://juliendecharentenay.eu5.net/index.html
+https://www.buildingphysicsonline.com/psychrometricCalculator.html
 
 ## License
 Copyright (C) 2018 Julien de Charentenay
